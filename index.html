@@ -120,7 +120,7 @@
     </style>
 </head>
 <body>
-    <h1>Выберите блюда для заказа:</h1>
+    <h1>Выберите блюда для зак��за:</h1>
     <div id="error-message"></div>
     <div id="menu"></div>
 
@@ -334,6 +334,13 @@
             setTimeout(() => {
                 statusElement.style.display = 'none';
             }, duration);
+            
+            // Логируем статусное сообщение в Sentry
+            Sentry.addBreadcrumb({
+                category: 'status',
+                message: message,
+                level: 'info'
+            });
         }
 
         function initializeApp() {
@@ -344,11 +351,32 @@
                     tg.expand();
                     tg.ready();
                     showStatus("Приложение инициализировано");
+                    
+                    Sentry.addBreadcrumb({
+                        category: 'init',
+                        message: 'Telegram WebApp успешно инициализирован',
+                        level: 'info'
+                    });
                 } else {
                     showStatus("Внимание: Telegram WebApp недоступен");
+                    
+                    Sentry.captureMessage("Telegram WebApp недоступен при инициализации", {
+                        level: 'warning',
+                        extra: {
+                            windowTelegram: !!window.Telegram,
+                            windowTelegramWebApp: !!window.Telegram?.WebApp
+                        }
+                    });
                 }
             } catch (error) {
                 showStatus("Ошибка при инициализации приложения");
+                
+                Sentry.captureException(error, {
+                    extra: {
+                        windowTelegram: !!window.Telegram,
+                        windowTelegramWebApp: !!window.Telegram?.WebApp
+                    }
+                });
             }
             
             // Загружаем меню
@@ -378,5 +406,9 @@
         // Вызываем initializeApp после загрузки DOM
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
+<script
+src="https://js.sentry-cdn.com/ce4b1585b490293ef1349bd70c8df397.min.js"
+crossorigin="anonymous"
+></script>
 </body>
 </html>
