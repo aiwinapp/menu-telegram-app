@@ -164,7 +164,7 @@
         </div>
     </div>
 
-    <div id="send-order-inline">Отправить заказ в чат (<span id="cart-count">0</span> шт, <span id="cart-total">0 ARS</span>)</div>
+    <div id="send-order-inline">Отправить заказ в чат (<span id="cart-count">0</span> шт, <span id="cart-total-inline">0 ARS</span>)</div>
     <!-- Добавляем элемент для отображения статусных сообщений -->
     <div id="status-message"></div>
 
@@ -231,7 +231,7 @@
                     dishElement.style.animationDelay = `${index * 0.1}s`; // Добавляем задержку для эффекта каскада
                     dishElement.innerHTML = `
                         <span class="dish-name">${dish.dish}</span>
-                        <span class="dish-price">${dish.price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</span>
+                        <span class="dish-price">${dish.price.toLocaleString('es-AR')} AR песо </span>
                         <button class="add-button" data-dish="${dish.dish}">+</button>
                         <input type="number" class="quantity-input" value="1" min="1" data-dish="${dish.dish}">
                     `;
@@ -298,7 +298,7 @@
 
         function updateInlineOrderButton() {
             const cartCountElement = document.getElementById('cart-count');
-            const cartTotalElement = document.getElementById('cart-total');
+            const cartTotalElement = document.getElementById('cart-total-inline'); // Изменено: используем правильный ID
             
             cartItemCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
             cartTotalSum = Object.entries(cart).reduce((sum, [dish, quantity]) => {
@@ -307,7 +307,7 @@
             }, 0);
 
             cartCountElement.textContent = cartItemCount;
-            cartTotalElement.textContent = cartTotalSum.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+            cartTotalElement.textContent = `${cartTotalSum.toLocaleString('es-AR')} AR песо`; // Изменено: убираем дробную часть и добавляем "AR песо"
 
             // Добавляем анимацию при обновлении
             const inlineOrderButton = document.getElementById('send-order-inline');
