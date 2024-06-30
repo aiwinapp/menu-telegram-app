@@ -117,10 +117,29 @@
             display: none;
             z-index: 1001;
         }
+
+        /* Добавляем стили для анимаций */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
     </style>
 </head>
 <body>
-    <h1>Выберите блюда для зак��за:</h1>
+    <h1></h1>
     <div id="error-message"></div>
     <div id="menu"></div>
 
@@ -144,14 +163,37 @@
         // Объявляем переменные глобально
         let cart = {};
         let menuData = [];
+        let tg;
+
+        // Добавляем константу для ключа кэша
+        const MENU_CACHE_KEY = 'cachedMenu';
+        const MENU_CACHE_EXPIRATION = 60 * 60 * 1000; // 1 час в миллисекундах
 
         function loadMenu() {
+            // Проверяем наличие кэшированного меню
+            const cachedMenu = localStorage.getItem(MENU_CACHE_KEY);
+            if (cachedMenu) {
+                const { data, timestamp } = JSON.parse(cachedMenu);
+                if (Date.now() - timestamp < MENU_CACHE_EXPIRATION) {
+                    console.log('Загружено кэшированное меню');
+                    menuData = data;
+                    renderMenu();
+                    return;
+                }
+            }
+
+            // Если кэш отсутствует или устарел, загружаем меню с сервера
             fetch('https://menu-telegram-app.pages.dev/menu.json')
                 .then(response => response.json())
                 .then(data => {
                     menuData = data;
                     renderMenu();
-                    console.log('Меню загружено:', menuData); // Добавляем лог для отладки
+                    // Кэшируем новое меню
+                    localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({
+                        data: menuData,
+                        timestamp: Date.now()
+                    }));
+                    console.log('Меню загружено и кэшировано:', menuData);
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки меню:', error);
@@ -167,12 +209,13 @@
 
             for (const [category, dishes] of Object.entries(groupedMenu)) {
                 const categoryElement = document.createElement('div');
-                categoryElement.className = 'category';
+                categoryElement.className = 'category slide-in';
                 categoryElement.innerHTML = `<h2>${category}</h2>`;
 
-                dishes.forEach(dish => {
+                dishes.forEach((dish, index) => {
                     const dishElement = document.createElement('div');
-                    dishElement.className = 'dish';
+                    dishElement.className = 'dish fade-in';
+                    dishElement.style.animationDelay = `${index * 0.1}s`; // Добавляем задержку для эффекта каскада
                     dishElement.innerHTML = `
                         <span class="dish-name">${dish.dish}</span>
                         <span class="dish-price">${dish.price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</span>
@@ -229,6 +272,7 @@
         function showCartModal() {
             const cartModal = document.getElementById('cart-modal');
             cartModal.style.display = 'flex';
+            cartModal.classList.add('fade-in');
             showCart();
         }
 
@@ -261,29 +305,16 @@
         });
 
         function prepareOrder() {
-            // Формируем текст заказа
-            let orderText = "Новый заказ:\n\n";
-            let total = 0;
-
-            for (const [dish, quantity] of Object.entries(cart)) {
-                const dishData = menuData.find(item => item.dish === dish);
-                const itemTotal = dishData.price * quantity;
-                total += itemTotal;
-
-                orderText += `${dish} - ${quantity} шт. x ${dishData.price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })} = ${itemTotal.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}\n`;
-            }
-
-            orderText += `\nИтого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
-
+            const orderText = prepareOrderText(); // Используем общую функцию для подготовки текста заказа
             console.log("Заказ подготовлен:", orderText); // Лог для отладки
 
-            // Отправляем заказ через Telegram WebApp
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.sendData(orderText);
+            if (tg) {
+                tg.sendData(orderText);
                 console.log("Заказ отправлен через Telegram WebApp"); // Лог для отладки
+                showStatus("Заказ отправлен");
             } else {
                 console.error("Telegram WebApp недоступен");
-                alert("Не удалось отправить заказ. Пожалуйста, попробуйте позже.");
+                showStatus("Не удалось отправить заказ. Пожалуйста, попробуйте позже.");
             }
 
             // Очищаем корзину и обновляем отображение
@@ -315,15 +346,18 @@
             const orderText = prepareOrderText();
             showStatus("Заказ подготовлен");
             
-            if (window.Telegram && window.Telegram.WebApp) {
+            if (tg) {
                 try {
-                    window.Telegram.WebApp.switchInlineQuery(orderText);
+                    tg.switchInlineQuery(orderText);
                     showStatus("Заказ отправлен в чат");
                 } catch (error) {
+                    console.error("Ошибка при отправке заказа:", error);
                     showStatus("Ошибка при отправке заказа. Попробуйте еще раз.");
+                    Sentry.captureException(error);
                 }
             } else {
                 showStatus("Ошибка: Telegram WebApp недоступен");
+                Sentry.captureMessage("Telegram WebApp недоступен при отправке заказа", { level: 'error' });
             }
         }
 
@@ -347,7 +381,7 @@
             showStatus("Инициализация приложения...");
             try {
                 if (window.Telegram && window.Telegram.WebApp) {
-                    window.tg = window.Telegram.WebApp;
+                    tg = window.Telegram.WebApp;
                     tg.expand();
                     tg.ready();
                     showStatus("Приложение инициализировано");
@@ -382,33 +416,29 @@
             // Загружаем меню
             loadMenu();
             
-            // Добавляем обработчик для кнопки корзины
+            // Добавляем обработчики событий
             document.getElementById('cart').addEventListener('click', showCartModal);
-            
-            // Добавляем обработчик для кнопки "Отправить заказ" в модальном окне
             document.getElementById('send-order').addEventListener('click', prepareOrder);
-
-            // Добавляем обработчик для закрытия модального окна корзины
-            document.getElementById('close-cart').addEventListener('click', function() {
+            document.getElementById('close-cart').addEventListener('click', () => {
                 document.getElementById('cart-modal').style.display = 'none';
             });
 
-            // Добавляем обработчик для новой кнопки отправки заказа в чат
             const sendOrderInlineButton = document.getElementById('send-order-inline');
             if (sendOrderInlineButton) {
                 sendOrderInlineButton.addEventListener('click', sendOrderInline);
                 showStatus("Кнопка 'Отправить заказ в чат' активирована");
             } else {
                 showStatus("Ошибка: Кнопка 'Отправить заказ в чат' не найдена");
+                Sentry.captureMessage("Кнопка 'Отправить заказ в чат' не найдена", { level: 'error' });
             }
         }
 
         // Вызываем initializeApp после загрузки DOM
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
-<script
-src="https://js.sentry-cdn.com/ce4b1585b490293ef1349bd70c8df397.min.js"
-crossorigin="anonymous"
-></script>
+    <script
+    src="https://js.sentry-cdn.com/ce4b1585b490293ef1349bd70c8df397.min.js"
+    crossorigin="anonymous"
+    ></script>
 </body>
 </html>
