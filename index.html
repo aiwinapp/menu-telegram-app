@@ -239,11 +239,14 @@
                 console.error("Ошибка при инициализации приложения:", error);
             }
             
-            // Загружаем меню в любом случае
+            // Загружаем меню в любом случае 
             loadMenu();
             
             // Добавляем обработчик для кнопки корзины
             document.getElementById('cart').addEventListener('click', showCartModal);
+            
+            // Добавляем обработчик для кнопки "Отправить заказ"
+            document.getElementById('send-order').addEventListener('click', sendOrder);
         }
 
         function loadMenu() {
@@ -269,6 +272,36 @@
         document.getElementById('close-cart').addEventListener('click', function() {
             document.getElementById('cart-modal').style.display = 'none';
         });
+
+        function sendOrder() {
+            // Формируем текст заказа
+            let orderText = "Новый заказ:\n\n";
+            let total = 0;
+
+            for (const [dish, quantity] of Object.entries(cart)) {
+                const dishData = menuData.find(item => item.dish === dish);
+                const itemTotal = dishData.price * quantity;
+                total += itemTotal;
+
+                orderText += `${dish} - ${quantity} шт. x ${dishData.price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })} = ${itemTotal.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}\n`;
+            }
+
+            orderText += `\nИтого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
+
+            // Отправляем заказ в Telegram
+            if (window.tg && window.tg.sendData) {
+                window.tg.sendData(orderText);
+            } else {
+                // Если Telegram WebApp недоступен, выводим заказ в консоль
+                console.log("Заказ отправлен:", orderText);
+                alert("Заказ отправлен! Проверьте консоль для деталей.");
+            }
+
+            // Очищаем корзину и закрываем модальное окно
+            cart = {};
+            updateCartButton();
+            document.getElementById('cart-modal').style.display = 'none';
+        }
 
         // Ждем, пока DOM будет полностью загружен
         document.addEventListener('DOMContentLoaded', initializeApp);
