@@ -232,7 +232,7 @@
                     dishElement.innerHTML = `
                         <span class="dish-name">${dish.dish}</span>
                         <span class="dish-price">${dish.price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</span>
-                        <button class="add-button" data-dish="${dish.dish}">Добавить</button>
+                        <button class="add-button" data-dish="${dish.dish}">+</button>
                         <input type="number" class="quantity-input" value="1" min="1" data-dish="${dish.dish}">
                     `;
                     categoryElement.appendChild(dishElement);
@@ -278,10 +278,22 @@
             updateInlineOrderButton(); // Добавляем вызов новой функции
         }
 
+        function calculateCartItemCount() {
+            return Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
+        }
+
+        function calculateCartTotalSum() {
+            return Object.entries(cart).reduce((sum, [dish, quantity]) => {
+                const dishData = menuData.find(item => item.dish === dish);
+                return sum + (dishData.price * quantity);
+            }, 0);
+        }
+
         function updateCartButton() {
+            cartItemCount = calculateCartItemCount();
+            cartTotalSum = calculateCartTotalSum();
             const cartButton = document.getElementById('cart');
-            cartItemCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
-            cartButton.textContent = `Корзина (${cartItemCount})`;
+            cartButton.textContent = `Корзина (${cartItemCount} шт, ${cartTotalSum.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })})`;
         }
 
         function updateInlineOrderButton() {
@@ -347,7 +359,7 @@
             updateInlineOrderButton(); // Обновляем информацию при отображении корзины
         }
 
-        // Добавляем обработчик для закрытия модального окна корзины
+        // Дбавляем обработчик для закрытия модального окна корзины
         document.getElementById('close-cart').addEventListener('click', function() {
             document.getElementById('cart-modal').style.display = 'none';
         });
@@ -490,3 +502,4 @@
     ></script>
 </body>
 </html>
+
