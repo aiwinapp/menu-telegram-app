@@ -112,28 +112,56 @@
     <script>
         // Объявляем переменную cart глобально
         let cart = {};
+        let menuData = []; // Добавляем глобальную переменную для хранения данных меню
 
-        // Загружаем меню по ссылке
-        fetch('https://menu-telegram-app.pages.dev/menu.json')
-            .then(response => response.json())
-            .then(data => {
-                window.menuData = data;
-                renderMenu();
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки меню:', error);
-                document.getElementById('error-message').textContent = 'Ошибка загрузки меню. Пожалуйста, попробуйте позже.';
-            });
+        function initializeApp() {
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.tg = window.Telegram.WebApp;
+                    tg.expand();
+                    
+                    // Настраиваем MainButton
+                    tg.MainButton.setText('Отправить заказ');
+                    tg.MainButton.hide();
+                    
+                    // Добавляем обработчик для MainButton
+                    tg.MainButton.onClick(sendOrderViaTelegram);
+                    
+                    tg.ready();
+                } else {
+                    console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
+                }
+            } catch (error) {
+                console.error("Ошибка при инициализации приложения:", error);
+            }
+            
+            // Загружаем меню
+            loadMenu();
+            
+            // Добавляем обработчик для кнопки корзины
+            document.getElementById('cart').addEventListener('click', showCartModal);
+            
+            // Добавляем обработчик для кнопки "Отправить заказ" в модальном окне
+            document.getElementById('send-order').addEventListener('click', prepareOrder);
+        }
 
-        function groupByCategory(menu) {
-            return menu.reduce((acc, item) => {
-                (acc[item.category] = acc[item.category] || []).push(item);
-                return acc;
-            }, {});
+        function loadMenu() {
+            fetch('https://menu-telegram-app.pages.dev/menu.json')
+                .then(response => response.json())
+                .then(data => {
+                    menuData = data; // Сохраняем данные меню в глобальную переменную
+                    renderMenu();
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки меню:', error);
+                    document.getElementById('error-message').textContent = 'Ошибка загрузки меню. Пожалуйста, попробуйте позже.';
+                });
         }
 
         function renderMenu() {
             const menuContainer = document.getElementById('menu');
+            menuContainer.innerHTML = ''; // Очищаем контейнер меню перед рендерингом
+
             const groupedMenu = groupByCategory(menuData);
 
             for (const [category, dishes] of Object.entries(groupedMenu)) {
@@ -171,6 +199,15 @@
                     updateCart(this.getAttribute('data-dish'), parseInt(this.value));
                 });
             });
+
+            console.log('Меню отрендерено'); // Добавляем лог для отладки
+        }
+
+        function groupByCategory(menu) {
+            return menu.reduce((acc, item) => {
+                (acc[item.category] = acc[item.category] || []).push(item);
+                return acc;
+            }, {});
         }
 
         function updateQuantity(dish, change) {
@@ -224,50 +261,6 @@
             }
 
             cartTotal.textContent = `Итого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
-        }
-
-        function initializeApp() {
-            try {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.tg = window.Telegram.WebApp;
-                    tg.expand();
-                    
-                    // Настраиваем MainButton
-                    tg.MainButton.setText('Отправить заказ');
-                    tg.MainButton.hide();
-                    
-                    // Добавляем обработчик для MainButton
-                    tg.MainButton.onClick(sendOrderViaTelegram);
-                    
-                    tg.ready();
-                } else {
-                    console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
-                }
-            } catch (error) {
-                console.error("Ошибка при инициализации приложения:", error);
-            }
-            
-            // Загружаем меню в любом случае 
-            loadMenu();
-            
-            // Добавляем обработчик для кнопки корзины
-            document.getElementById('cart').addEventListener('click', showCartModal);
-            
-            // Добавляем обработчик для кнопки "Отправить заказ" в модальном окне
-            document.getElementById('send-order').addEventListener('click', prepareOrder);
-        }
-
-        function loadMenu() {
-            fetch('https://menu-telegram-app.pages.dev/menu.json')
-                .then(response => response.json())
-                .then(data => {
-                    window.menuData = data;
-                    renderMenu();
-                })
-                .catch(error => {
-                    console.error('Ошибка загрузки меню:', error);
-                    document.getElementById('error-message').textContent = 'Ошибка загрузки меню. Пожалуйста, попробуйте позже.';
-                });
         }
 
         function showCartModal() {
