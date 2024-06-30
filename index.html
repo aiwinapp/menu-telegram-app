@@ -136,6 +136,16 @@
         .slide-in {
             animation: slideIn 0.3s ease-out;
         }
+
+        /* Добавляем стили для анимации обновления */
+        @keyframes update-flash {
+            0% { background-color: var(--tg-theme-button-color, #3390ec); }
+            50% { background-color: var(--tg-theme-secondary-bg-color, #f0f0f0); }
+            100% { background-color: var(--tg-theme-button-color, #3390ec); }
+        }
+        .update-animation {
+            animation: update-flash 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -154,8 +164,7 @@
         </div>
     </div>
 
-    <div id="send-order-inline">Отправить заказ в чат</div>
-
+    <div id="send-order-inline">Отправить заказ в чат (<span id="cart-count">0</span> шт, <span id="cart-total">0 ARS</span>)</div>
     <!-- Добавляем элемент для отображения статусных сообщений -->
     <div id="status-message"></div>
 
@@ -168,6 +177,10 @@
         // Добавляем константу для ключа кэша
         const MENU_CACHE_KEY = 'cachedMenu';
         const MENU_CACHE_EXPIRATION = 60 * 60 * 1000; // 1 час в миллисекундах
+
+        // Добавляем глобальные переменные для отслеживания количества и суммы
+        let cartItemCount = 0;
+        let cartTotalSum = 0;
 
         function loadMenu() {
             // Проверяем наличие кэшированного меню
@@ -241,6 +254,7 @@
             document.querySelectorAll('.quantity-input').forEach(input => {
                 input.addEventListener('change', function() {
                     updateCart(this.getAttribute('data-dish'), parseInt(this.value));
+                    updateInlineOrderButton(); // Добавляем вызов функции здесь
                 });
             });
 
@@ -261,12 +275,34 @@
                 delete cart[dish];
             }
             updateCartButton();
+            updateInlineOrderButton(); // Добавляем вызов новой функции
         }
 
         function updateCartButton() {
             const cartButton = document.getElementById('cart');
-            const totalItems = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
-            cartButton.textContent = `Корзина (${totalItems})`;
+            cartItemCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
+            cartButton.textContent = `Корзина (${cartItemCount})`;
+        }
+
+        function updateInlineOrderButton() {
+            const cartCountElement = document.getElementById('cart-count');
+            const cartTotalElement = document.getElementById('cart-total');
+            
+            cartItemCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
+            cartTotalSum = Object.entries(cart).reduce((sum, [dish, quantity]) => {
+                const dishData = menuData.find(item => item.dish === dish);
+                return sum + (dishData.price * quantity);
+            }, 0);
+
+            cartCountElement.textContent = cartItemCount;
+            cartTotalElement.textContent = cartTotalSum.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+
+            // Добавляем анимацию при обновлении
+            const inlineOrderButton = document.getElementById('send-order-inline');
+            inlineOrderButton.classList.add('update-animation');
+            setTimeout(() => {
+                inlineOrderButton.classList.remove('update-animation');
+            }, 300);
         }
 
         function showCartModal() {
@@ -297,6 +333,18 @@
             }
 
             cartTotal.textContent = `Итого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
+
+            document.querySelectorAll('.remove-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const dish = this.getAttribute('data-dish');
+                    delete cart[dish];
+                    updateCartButton();
+                    updateInlineOrderButton(); // Добавляем вызов функции здесь
+                    showCart();
+                });
+            });
+
+            updateInlineOrderButton(); // Обновляем информацию при отображении корзины
         }
 
         // Добавляем обработчик для закрытия модального окна корзины
