@@ -143,7 +143,7 @@
                     dishElement.className = 'dish';
                     dishElement.innerHTML = `
                         <span class="dish-name">${dish.dish}</span>
-                        <span class="dish-price">${dish.price.toLocaleString('ru-RU')} тг</span>
+                        <span class="dish-price">${dish.price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</span>
                         <button class="add-button" data-dish="${dish.dish}">Добавить</button>
                         <input type="number" class="quantity-input" value="1" min="1" data-dish="${dish.dish}">
                     `;
@@ -215,12 +215,12 @@
                 cartItem.className = 'cart-item';
                 cartItem.innerHTML = `
                     <span>${dish}</span>
-                    <span>${quantity} x ${dishData.price.toLocaleString('ru-RU')} тг = ${itemTotal.toLocaleString('ru-RU')} тг</span>
+                    <span>${quantity} x ${dishData.price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })} = ${itemTotal.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</span>
                 `;
                 cartItems.appendChild(cartItem);
             }
 
-            cartTotal.textContent = `Итого: ${total.toLocaleString('ru-RU')} тг`;
+            cartTotal.textContent = `Итого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
         }
 
         function initializeApp() {
