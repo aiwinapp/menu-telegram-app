@@ -104,6 +104,19 @@
             text-align: center;
             z-index: 1000;
         }
+        
+        #status-message {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1001;
+        }
     </style>
 </head>
 <body>
@@ -123,6 +136,9 @@
     </div>
 
     <div id="send-order-inline">Отправить заказ в чат</div>
+
+    <!-- Добавляем элемент для отображения статусных сообщений -->
+    <div id="status-message"></div>
 
     <script>
         // Объявляем переменные глобально
@@ -295,28 +311,44 @@
         }
 
         function sendOrderInline() {
+            showStatus("Подготовка заказа...");
             const orderText = prepareOrderText();
+            showStatus("Заказ подготовлен");
+            
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.switchInlineQuery(orderText);
-                console.log("Заказ отправлен в режиме inline запроса"); // Лог для отладки
+                try {
+                    window.Telegram.WebApp.switchInlineQuery(orderText);
+                    showStatus("Заказ отправлен в чат");
+                } catch (error) {
+                    showStatus("Ошибка при отправке заказа. Попробуйте еще раз.");
+                }
             } else {
-                console.error("Telegram WebApp недоступен");
-                alert("Не удалось отправить заказ. Пожалуйста, попробуйте позже.");
+                showStatus("Ошибка: Telegram WebApp недоступен");
             }
         }
 
-        // Изменяем функцию initializeApp
+        function showStatus(message, duration = 3000) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, duration);
+        }
+
         function initializeApp() {
+            showStatus("Инициализация приложения...");
             try {
                 if (window.Telegram && window.Telegram.WebApp) {
                     window.tg = window.Telegram.WebApp;
                     tg.expand();
                     tg.ready();
+                    showStatus("Приложение инициализировано");
                 } else {
-                    console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
+                    showStatus("Внимание: Telegram WebApp недоступен");
                 }
             } catch (error) {
-                console.error("Ошибка при инициализации приложения:", error);
+                showStatus("Ошибка при инициализации приложения");
             }
             
             // Загружаем меню
@@ -334,7 +366,13 @@
             });
 
             // Добавляем обработчик для новой кнопки отправки заказа в чат
-            document.getElementById('send-order-inline').addEventListener('click', sendOrderInline);
+            const sendOrderInlineButton = document.getElementById('send-order-inline');
+            if (sendOrderInlineButton) {
+                sendOrderInlineButton.addEventListener('click', sendOrderInline);
+                showStatus("Кнопка 'Отправить заказ в чат' активирована");
+            } else {
+                showStatus("Ошибка: Кнопка 'Отправить заказ в чат' не найдена");
+            }
         }
 
         // Вызываем initializeApp после загрузки DOM
