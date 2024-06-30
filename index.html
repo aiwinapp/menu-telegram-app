@@ -231,6 +231,11 @@
                 if (window.Telegram && window.Telegram.WebApp) {
                     window.tg = window.Telegram.WebApp;
                     tg.expand();
+                    
+                    // Настраиваем MainButton
+                    tg.MainButton.setText('Отправить заказ');
+                    tg.MainButton.hide();
+                    
                     tg.ready();
                 } else {
                     console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
@@ -245,8 +250,8 @@
             // Добавляем обработчик для кнопки корзины
             document.getElementById('cart').addEventListener('click', showCartModal);
             
-            // Добавляем обработчик для кнопки "Отправить заказ"
-            document.getElementById('send-order').addEventListener('click', sendOrder);
+            // Заменяем обработчик для кнопки "Отправить заказ"
+            document.getElementById('send-order').addEventListener('click', prepareOrder);
         }
 
         function loadMenu() {
@@ -273,7 +278,7 @@
             document.getElementById('cart-modal').style.display = 'none';
         });
 
-        function sendOrder() {
+        function prepareOrder() {
             // Формируем текст заказа
             let orderText = "Новый заказ:\n\n";
             let total = 0;
@@ -288,19 +293,32 @@
 
             orderText += `\nИтого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
 
-            // Отправляем заказ в Telegram
-            if (window.tg && window.tg.sendData) {
-                window.tg.sendData(orderText);
+            // Сохраняем текст заказа
+            window.orderText = orderText;
+
+            // Показываем MainButton
+            if (window.tg && window.tg.MainButton) {
+                window.tg.MainButton.show();
             } else {
-                // Если Telegram WebApp недоступен, выводим заказ в консоль
-                console.log("Заказ отправлен:", orderText);
-                alert("Заказ отправлен! Проверьте консоль для деталей.");
+                console.log("Заказ готов к отправке:", orderText);
+                alert("Заказ готов к отправке! Проверьте консоль для деталей.");
             }
 
-            // Очищаем корзину и закрываем модальное окно
-            cart = {};
-            updateCartButton();
+            // Закрываем модальное окно корзины
             document.getElementById('cart-modal').style.display = 'none';
+        }
+
+        // Добавляем обработчик для MainButton
+        if (window.tg && window.tg.MainButton) {
+            window.tg.MainButton.onClick(function() {
+                // Отправляем заказ
+                window.tg.sendData(window.orderText);
+                
+                // Очищаем корзину и скрываем кнопку
+                cart = {};
+                updateCartButton();
+                window.tg.MainButton.hide();
+            });
         }
 
         // Ждем, пока DOM будет полностью загружен
