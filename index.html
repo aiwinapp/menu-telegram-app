@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Menu</title>
+    <title>Домашняя кухня МАР-ДЕЛЬ-ПЛАТА</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -94,7 +94,7 @@
     </style>
 </head>
 <body>
-    <h1>Наше меню </h1>
+    <h1>Выберите блюда для заказа:</h1>
     <div id="error-message"></div>
     <div id="menu"></div>
 
@@ -110,9 +110,9 @@
     </div>
 
     <script>
-        // Объявляем переменную cart глобально
+        // Объявляем переменные глобально
         let cart = {};
-        let menuData = []; // Добавляем глобальную переменную для хранения данных меню
+        let menuData = [];
 
         function initializeApp() {
             try {
@@ -149,7 +149,7 @@
             fetch('https://menu-telegram-app.pages.dev/menu.json')
                 .then(response => response.json())
                 .then(data => {
-                    menuData = data; // Сохраняем данные меню в глобальную переменную
+                    menuData = data;
                     renderMenu();
                 })
                 .catch(error => {
@@ -160,7 +160,7 @@
 
         function renderMenu() {
             const menuContainer = document.getElementById('menu');
-            menuContainer.innerHTML = ''; // Очищаем контейнер меню перед рендерингом
+            menuContainer.innerHTML = '';
 
             const groupedMenu = groupByCategory(menuData);
 
@@ -200,7 +200,7 @@
                 });
             });
 
-            console.log('Меню отрендерено'); // Добавляем лог для отладки
+            console.log('Меню отрендерено');
         }
 
         function groupByCategory(menu) {
@@ -208,21 +208,6 @@
                 (acc[item.category] = acc[item.category] || []).push(item);
                 return acc;
             }, {});
-        }
-
-        function updateQuantity(dish, change) {
-            const input = document.querySelector(`.quantity-input[data-dish="${dish}"]`);
-            let newValue = parseInt(input.value) + change;
-            newValue = Math.max(0, newValue); // Не позволяем отрицательные значения
-            input.value = newValue;
-            updateCart(dish, newValue);
-
-            // Если количество стало 0, скрываем элементы управления и показываем кнопку "Добавить"
-            if (newValue === 0) {
-                const dishControls = input.closest('.dish-controls');
-                dishControls.style.display = 'none';
-                dishControls.previousElementSibling.style.display = 'inline-block';
-            }
         }
 
         function updateCart(dish, quantity) {
@@ -238,6 +223,12 @@
             const cartButton = document.getElementById('cart');
             const totalItems = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
             cartButton.textContent = `Корзина (${totalItems})`;
+        }
+
+        function showCartModal() {
+            const cartModal = document.getElementById('cart-modal');
+            cartModal.style.display = 'flex';
+            showCart();
         }
 
         function showCart() {
@@ -261,12 +252,6 @@
             }
 
             cartTotal.textContent = `Итого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
-        }
-
-        function showCartModal() {
-            const cartModal = document.getElementById('cart-modal');
-            cartModal.style.display = 'flex';
-            showCart();
         }
 
         // Добавляем обработчик для закрытия модального окна корзины
@@ -323,8 +308,9 @@
         }
 
         function sendOrderDirectly(orderText) {
-        // Ждем, пока DOM будет полностью загружен
-        document.addEventListener('DOMContentLoaded', initializeApp);
+            // Ждем, пока DOM будет полностью загружен
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        }
     </script>
 </body>
 </html>
