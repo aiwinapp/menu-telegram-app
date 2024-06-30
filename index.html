@@ -365,7 +365,7 @@
         });
 
         function prepareOrder() {
-            const orderText = prepareOrderText(); // Используем общую функцию для подготовки текста заказа
+            const orderText = prepareOrderText(); // Используем общую функцию для подготовки текста закза
             console.log("Заказ подготовлен:", orderText); // Лог для отладки
 
             if (tg) {
@@ -408,7 +408,7 @@
             
             if (tg) {
                 try {
-                    tg.switchInlineQuery(orderText);
+                    tg.sendData(orderText); // Заменяем метод на sendData
                     showStatus("Заказ отправлен в чат");
                 } catch (error) {
                     console.error("Ошибка при отправке заказа:", error);
@@ -436,6 +436,39 @@
                 level: 'info'
             });
         }
+
+        function parseTelegramWebAppData() {
+            try {
+                const hash = window.location.hash;
+                if (hash.startsWith('#tgWebAppData=')) {
+                    const encodedData = hash.substring('#tgWebAppData='.length);
+                    const decodedData = decodeURIComponent(encodedData);
+                    const userData = JSON.parse(decodeURIComponent(decodedData.split('=')[1]));
+                    console.log('Parsed Telegram WebApp Data:', userData);
+
+                    // Отправляем данные в Sentry
+                    Sentry.captureMessage('Parsed Telegram WebApp Data', {
+                        level: 'info',
+                        extra: userData
+                    });
+
+                    return userData;
+                }
+            } catch (error) {
+                console.error('Ошибка при парсинге данных Telegram WebApp:', error);
+                Sentry.captureException(error);
+            }
+            return null;
+        }
+
+        // Пример использования функции
+        document.addEventListener('DOMContentLoaded', () => {
+            const userData = parseTelegramWebAppData();
+            if (userData) {
+                console.log('User Data:', userData);
+                // Здесь можно использовать userData для дальнейших действий
+            }
+        });
 
         function initializeApp() {
             showStatus("Инициализация приложения...");
@@ -489,7 +522,7 @@
                 showStatus("Кнопка 'Отправить заказ в чат' активирована");
             } else {
                 showStatus("Ошибка: Кнопка 'Отправить заказ в чат' не найдена");
-                Sentry.captureMessage("Кнопка 'Отправить заказ в чат' не найдена", { level: 'error' });
+                Sentry.captureMessage("Кнопка 'Отправить заказ в чат' не надена", { level: 'error' });
             }
         }
 
