@@ -110,6 +110,9 @@
     </div>
 
     <script>
+        // Объявляем переменную cart глобально
+        let cart = {};
+
         // Загружаем меню по ссылке
         fetch('https://menu-telegram-app.pages.dev/menu.json')
             .then(response => response.json())
@@ -226,20 +229,46 @@
         function initializeApp() {
             try {
                 if (window.Telegram && window.Telegram.WebApp) {
-                    const tg = window.Telegram.WebApp;
+                    window.tg = window.Telegram.WebApp;
                     tg.expand();
-                    renderMenu();
                     tg.ready();
                 } else {
-                    throw new Error("Telegram WebApp is not available");
+                    console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
                 }
             } catch (error) {
-                console.error("Error initializing app:", error);
-                document.getElementById('error-message').textContent = 
-                    "Ошибка при инициализации приложения. Пожалуйста, убедитесь, что вы открываете это в Telegram.";
-                renderMenu(); // Отображаем меню даже в случае ошибки
+                console.error("Ошибка при инициализации приложения:", error);
             }
+            
+            // Загружаем меню в любом случае
+            loadMenu();
+            
+            // Добавляем обработчик для кнопки корзины
+            document.getElementById('cart').addEventListener('click', showCartModal);
         }
+
+        function loadMenu() {
+            fetch('https://menu-telegram-app.pages.dev/menu.json')
+                .then(response => response.json())
+                .then(data => {
+                    window.menuData = data;
+                    renderMenu();
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки меню:', error);
+                    document.getElementById('error-message').textContent = 'Ошибка загрузки меню. Пожалуйста, попробуйте позже.';
+                });
+        }
+
+        function showCartModal() {
+            const cartModal = document.getElementById('cart-modal');
+            cartModal.style.display = 'flex';
+            showCart();
+        }
+
+        // Добавляем обработчик для закрытия модального окна корзины
+        document.getElementById('close-cart').addEventListener('click', function() {
+            document.getElementById('cart-modal').style.display = 'none';
+        });
 
         // Ждем, пока DOM будет полностью загружен
         document.addEventListener('DOMContentLoaded', initializeApp);
