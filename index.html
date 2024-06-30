@@ -236,6 +236,9 @@
                     tg.MainButton.setText('Отправить заказ');
                     tg.MainButton.hide();
                     
+                    // Добавляем обработчик для MainButton
+                    tg.MainButton.onClick(sendOrderViaTelegram);
+                    
                     tg.ready();
                 } else {
                     console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
@@ -250,7 +253,7 @@
             // Добавляем обработчик для кнопки корзины
             document.getElementById('cart').addEventListener('click', showCartModal);
             
-            // Заменяем обработчик для кнопки "Отправить заказ"
+            // Добавляем обработчик для кнопки "Отправить заказ" в модальном окне
             document.getElementById('send-order').addEventListener('click', prepareOrder);
         }
 
@@ -296,31 +299,37 @@
             // Сохраняем текст заказа
             window.orderText = orderText;
 
-            // Показываем MainButton
+            console.log("Заказ подготовлен:", orderText); // Добавляем лог для отладки
+
+            // Показываем MainButton, если доступен Telegram WebApp
             if (window.tg && window.tg.MainButton) {
                 window.tg.MainButton.show();
             } else {
-                console.log("Заказ готов к отправке:", orderText);
-                alert("Заказ готов к отправке! Проверьте консоль для деталей.");
+                // Если Telegram WebApp недоступен, отправляем заказ напрямую
+                sendOrderDirectly(orderText);
             }
 
             // Закрываем модальное окно корзины
             document.getElementById('cart-modal').style.display = 'none';
         }
 
-        // Добавляем обработчик для MainButton
-        if (window.tg && window.tg.MainButton) {
-            window.tg.MainButton.onClick(function() {
-                // Отправляем заказ
+        function sendOrderViaTelegram() {
+            if (window.tg && window.tg.sendData) {
                 window.tg.sendData(window.orderText);
-                
-                // Очищаем корзину и скрываем кнопку
-                cart = {};
-                updateCartButton();
+                console.log("Заказ отправлен через Telegram WebApp"); // Добавляем лог для отладки
+            } else {
+                console.error("Telegram WebApp недоступен");
+            }
+            
+            // Очищаем корзину и скрываем кнопку
+            cart = {};
+            updateCartButton();
+            if (window.tg && window.tg.MainButton) {
                 window.tg.MainButton.hide();
-            });
+            }
         }
 
+        function sendOrderDirectly(orderText) {
         // Ждем, пока DOM будет полностью загружен
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
