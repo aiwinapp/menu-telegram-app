@@ -114,43 +114,13 @@
         let cart = {};
         let menuData = [];
 
-        function initializeApp() {
-            try {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.tg = window.Telegram.WebApp;
-                    tg.expand();
-                    
-                    // Настраиваем MainButton
-                    tg.MainButton.setText('Отправить заказ');
-                    tg.MainButton.hide();
-                    
-                    // Добавляем обработчик для MainButton
-                    tg.MainButton.onClick(sendOrderViaTelegram);
-                    
-                    tg.ready();
-                } else {
-                    console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
-                }
-            } catch (error) {
-                console.error("Ошибка при инициализации приложения:", error);
-            }
-            
-            // Загружаем меню
-            loadMenu();
-            
-            // Добавляем обработчик для кнопки корзины
-            document.getElementById('cart').addEventListener('click', showCartModal);
-            
-            // Добавляем обработчик для кнопки "Отправить заказ" в модальном окне
-            document.getElementById('send-order').addEventListener('click', prepareOrder);
-        }
-
         function loadMenu() {
             fetch('https://menu-telegram-app.pages.dev/menu.json')
                 .then(response => response.json())
                 .then(data => {
                     menuData = data;
                     renderMenu();
+                    console.log('Меню загружено:', menuData); // Добавляем лог для отладки
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки меню:', error);
@@ -294,7 +264,7 @@
         function sendOrderViaTelegram() {
             if (window.tg && window.tg.sendData) {
                 window.tg.sendData(window.orderText);
-                console.log("Заказ отправлен через Telegram WebApp"); // Добавляем лог для отладки
+                console.log("Заказ отправлен через Telegram WebApp"); // Добавляем лог д��я отладки
             } else {
                 console.error("Telegram WebApp недоступен");
             }
@@ -311,6 +281,46 @@
             // Ждем, пока DOM будет полностью загружен
             document.addEventListener('DOMContentLoaded', initializeApp);
         }
+
+        // Изменяем функцию initializeApp
+        function initializeApp() {
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.tg = window.Telegram.WebApp;
+                    tg.expand();
+                    
+                    // Настраиваем MainButton
+                    tg.MainButton.setText('Отправить заказ');
+                    tg.MainButton.hide();
+                    
+                    // Добавляем обработчик для MainButton
+                    tg.MainButton.onClick(sendOrderViaTelegram);
+                    
+                    tg.ready();
+                } else {
+                    console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
+                }
+            } catch (error) {
+                console.error("Ошибка при инициализации приложения:", error);
+            }
+            
+            // Загружаем меню
+            loadMenu();
+            
+            // Добавляем обработчик для кнопки корзины
+            document.getElementById('cart').addEventListener('click', showCartModal);
+            
+            // Добавляем обработчик для кнопки "Отправить заказ" в модальном окне
+            document.getElementById('send-order').addEventListener('click', prepareOrder);
+
+            // Добавляем обработчик для закрытия модального окна корзины
+            document.getElementById('close-cart').addEventListener('click', function() {
+                document.getElementById('cart-modal').style.display = 'none';
+            });
+        }
+
+        // Вызываем initializeApp после загрузки DOM
+        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
