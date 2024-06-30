@@ -244,42 +244,21 @@
 
             orderText += `\nИтого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
 
-            // Сохраняем текст заказа
-            window.orderText = orderText;
+            console.log("Заказ подготовлен:", orderText); // Лог для отладки
 
-            console.log("Заказ подготовлен:", orderText); // Добавляем лог для отладки
-
-            // Показываем MainButton, если доступен Telegram WebApp
-            if (window.tg && window.tg.MainButton) {
-                window.tg.MainButton.show();
-            } else {
-                // Если Telegram WebApp недоступен, отправляем заказ напрямую
-                sendOrderDirectly(orderText);
-            }
-
-            // Закрываем модальное окно корзины
-            document.getElementById('cart-modal').style.display = 'none';
-        }
-
-        function sendOrderViaTelegram() {
-            if (window.tg && window.tg.sendData) {
-                window.tg.sendData(window.orderText);
-                console.log("Заказ отправлен через Telegram WebApp"); // Добавляем лог д��я отладки
+            // Отправляем заказ через Telegram WebApp
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.sendData(orderText);
+                console.log("Заказ отправлен через Telegram WebApp"); // Лог для отладки
             } else {
                 console.error("Telegram WebApp недоступен");
+                alert("Не удалось отправить заказ. Пожалуйста, попробуйте позже.");
             }
-            
-            // Очищаем корзину и скрываем кнопку
+
+            // Очищаем корзину и обновляем отображение
             cart = {};
             updateCartButton();
-            if (window.tg && window.tg.MainButton) {
-                window.tg.MainButton.hide();
-            }
-        }
-
-        function sendOrderDirectly(orderText) {
-            // Ждем, пока DOM будет полностью загружен
-            document.addEventListener('DOMContentLoaded', initializeApp);
+            document.getElementById('cart-modal').style.display = 'none';
         }
 
         // Изменяем функцию initializeApp
@@ -289,12 +268,12 @@
                     window.tg = window.Telegram.WebApp;
                     tg.expand();
                     
-                    // Настраиваем MainButton
-                    tg.MainButton.setText('Отправить заказ');
-                    tg.MainButton.hide();
+                    // Настраиваем MainButton (больше не нужно)
+                    // tg.MainButton.setText('Отправить заказ');
+                    // tg.MainButton.hide();
                     
-                    // Добавляем обработчик для MainButton
-                    tg.MainButton.onClick(sendOrderViaTelegram);
+                    // Удаляем обработчик для MainButton
+                    // tg.MainButton.onClick(sendOrderViaTelegram);
                     
                     tg.ready();
                 } else {
