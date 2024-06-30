@@ -91,6 +91,19 @@
             border-radius: 5px;
             cursor: pointer;
         }
+        #send-order-inline {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -108,6 +121,8 @@
             <button id="close-cart">Закрыть</button>
         </div>
     </div>
+
+    <div id="send-order-inline">Отправить заказ в чат</div>
 
     <script>
         // Объявляем переменные глобально
@@ -261,20 +276,41 @@
             document.getElementById('cart-modal').style.display = 'none';
         }
 
+        function prepareOrderText() {
+            // Формируем текст заказа
+            let orderText = "Новый заказ:\n\n";
+            let total = 0;
+
+            for (const [dish, quantity] of Object.entries(cart)) {
+                const dishData = menuData.find(item => item.dish === dish);
+                const itemTotal = dishData.price * quantity;
+                total += itemTotal;
+
+                orderText += `${dish} - ${quantity} шт. x ${dishData.price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })} = ${itemTotal.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}\n`;
+            }
+
+            orderText += `\nИтого: ${total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`;
+
+            return orderText;
+        }
+
+        function sendOrderInline() {
+            const orderText = prepareOrderText();
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.switchInlineQuery(orderText);
+                console.log("Заказ отправлен в режиме inline запроса"); // Лог для отладки
+            } else {
+                console.error("Telegram WebApp недоступен");
+                alert("Не удалось отправить заказ. Пожалуйста, попробуйте позже.");
+            }
+        }
+
         // Изменяем функцию initializeApp
         function initializeApp() {
             try {
                 if (window.Telegram && window.Telegram.WebApp) {
                     window.tg = window.Telegram.WebApp;
                     tg.expand();
-                    
-                    // Настраиваем MainButton (больше не нужно)
-                    // tg.MainButton.setText('Отправить заказ');
-                    // tg.MainButton.hide();
-                    
-                    // Удаляем обработчик для MainButton
-                    // tg.MainButton.onClick(sendOrderViaTelegram);
-                    
                     tg.ready();
                 } else {
                     console.warn("Telegram WebApp не доступен, но приложение продолжит работу");
@@ -296,6 +332,9 @@
             document.getElementById('close-cart').addEventListener('click', function() {
                 document.getElementById('cart-modal').style.display = 'none';
             });
+
+            // Добавляем обработчик для новой кнопки отправки заказа в чат
+            document.getElementById('send-order-inline').addEventListener('click', sendOrderInline);
         }
 
         // Вызываем initializeApp после загрузки DOM
