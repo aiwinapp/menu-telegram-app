@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,6 +40,50 @@
             color: red;
             font-weight: bold;
         }
+        .dish-controls {
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+        }
+        .quantity-input {
+            width: 40px;
+            text-align: center;
+            margin: 0 5px;
+        }
+        #cart {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #cart-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .cart-content {
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -47,43 +91,82 @@
     <div id="error-message"></div>
     <div id="menu"></div>
 
+    <div id="cart">Корзина</div>
+    <div id="cart-modal">
+        <div class="cart-content">
+            <h2>Ваш заказ</h2>
+            <div id="cart-items"></div>
+            <div id="cart-total"></div>
+            <button id="send-order">Отправить заказ</button>
+            <button id="close-cart">Закрыть</button>
+        </div>
+    </div>
+
     <script>
         const menuData = [
-            {category: "Завтраки", dish: "Сырники (5 шт)", price: 7000},
-            {category: "Завтраки", dish: "Блины (23 см диаметр 2 шт)", price: 5000},
-            {category: "Завтраки", dish: "Блинчики (5 шт)", price: 5000},
-            {category: "Завтраки", dish: "Оладьи на кефире (5 шт)", price: 5000},
-            {category: "Закуски", dish: "Картофельные драники (5 шт)", price: 3000},
-            {category: "Закуски", dish: "Кабачковые оладьи (5 шт)", price: 6000},
-            {category: "Закуски", dish: "Оладьи из печени (5 шт)", price: 6000},
-            {category: "Гарниры", dish: "Картофельное пюре", price: 1500},
-            {category: "Гарниры", dish: "Рис", price: 1200},
-            {category: "Гарниры", dish: "Макароны", price: 1000},
-            {category: "Гарниры", dish: "Лапша", price: 1500},
-            {category: "Салаты", dish: "Оливье (1 кг)", price: 10000},
-            {category: "Салаты", dish: "Винегрет (1 кг)", price: 7000},
-            {category: "Салаты", dish: "Мимоза", price: 9000},
-            {category: "Горячие блюда", dish: "Голубцы", price: 7000},
-            {category: "Горячие блюда", dish: "Пельмени свиные", price: 8000},
-            {category: "Горячие блюда", dish: "Пельмени говяжьи", price: 8000},
-            {category: "Горячие блюда", dish: "Пельмени куриные", price: 8000},
-            {category: "Горячие блюда", dish: "Фаршированный перец (1 шт)", price: 1500},
-            {category: "Горячие блюда", dish: "Вареники творожные", price: 1500},
-            {category: "Горячие блюда", dish: "Вареники картофельные", price: 1500},
-            {category: "Горячие блюда", dish: "Рагу из утки", price: 1500},
-            {category: "Горячие блюда", dish: "Лагман", price: 8000},
-            {category: "Горячие блюда", dish: "Плов с курицей", price: 8000},
-            {category: "Горячие блюда", dish: "Плов с говядиной", price: 8000},
-            {category: "Мясные блюда", dish: "Картошка по-французски", price: 3000},
-            {category: "Мясные блюда", dish: "Куриная грудка под шубой из овощей и сыра", price: 6000},
-            {category: "Мясные блюда", dish: "Манты классические (4 шт)", price: 6000},
-            {category: "Мясные блюда", dish: "Манты с тыквой (4 шт)", price: 4000},
-            {category: "Мясные блюда", dish: "Куриные котлеты (2 шт)", price: 3000},
-            {category: "Мясные блюда", dish: "Мясные котлеты (2 шт)", price: 4000},
-            {category: "Мясные блюда", dish: "Рыбные котлеты (2 шт)", price: 3000},
-            {category: "Супы", dish: "Борщ украинский", price: 7000},
-            {category: "Супы", dish: "Рассольник", price: 5000}
-        ];
+    {"category": "Завтраки", "dish": "Сырники (5 шт)", "price": 7000},
+    {"category": "Завтраки", "dish": "Блины (23 см диаметр 2 шт)", "price": 5000},
+    {"category": "Завтраки", "dish": "Блинчики (5 шт)", "price": 5000},
+    {"category": "Завтраки", "dish": "Оладьи на кефире (5 шт)", "price": 5000},
+    {"category": "Закуски", "dish": "Картофельные драники (5 шт)", "price": 3000},
+    {"category": "Закуски", "dish": "Кабачковые оладьи (5 шт)", "price": 6000},
+    {"category": "Закуски", "dish": "Оладьи из печени (5 шт)", "price": 6000},
+    {"category": "Гарниры", "dish": "Картофельное пюре", "price": 1500},
+    {"category": "Гарниры", "dish": "Рис", "price": 1200},
+    {"category": "Гарниры", "dish": "Макароны", "price": 1000},
+    {"category": "Гарниры", "dish": "Лапша", "price": 1500},
+    {"category": "Салаты", "dish": "Оливье (1 кг)", "price": 10000},
+    {"category": "Салаты", "dish": "Винегрет (1 кг)", "price": 7000},
+    {"category": "Салаты", "dish": "Мимоза", "price": 9000},
+    {"category": "Горячие блюда", "dish": "Голубцы", "price": 7000},
+    {"category": "Горячие блюда", "dish": "Пельмени свиные", "price": 8000},
+    {"category": "Горячие блюда", "dish": "Пельмени говяжьи", "price": 8000},
+    {"category": "Горячие блюда", "dish": "Пельмени куриные", "price": 8000},
+    {"category": "Горячие блюда", "dish": "Фаршированный перец (1 шт)", "price": 1500},
+    {"category": "Горячие блюда", "dish": "Вареники творожные", "price": 1500},
+    {"category": "Горячие блюда", "dish": "Вареники картофельные", "price": 1500},
+    {"category": "Горячие блюда", "dish": "Рагу из утки", "price": 1500},
+    {"category": "Горячие блюда", "dish": "Лагман", "price": 8000},
+    {"category": "Горячие блюда", "dish": "Плов с курицей", "price": 8000},
+    {"category": "Горячие блюда", "dish": "Плов с говядиной", "price": 8000},
+    {"category": "Мясные блюда", "dish": "Картошка по-французски", "price": 3000},
+    {"category": "Мясные блюда", "dish": "Куриная грудка под шубой из овощей и сыра", "price": 6000},
+    {"category": "Мясные блюда", "dish": "Манты классические (4 шт)", "price": 6000},
+    {"category": "Мясные блюда", "dish": "Манты с тыквой (4 шт)", "price": 4000},
+    {"category": "Мясные блюда", "dish": "Куриные котлеты (2 шт)", "price": 3000},
+    {"category": "Мясные блюда", "dish": "Мясные котлеты (2 шт)", "price": 4000},
+    {"category": "Мясные блюда", "dish": "Рыбные котлеты (2 шт)", "price": 3000},
+    {"category": "Супы", "dish": "Борщ украинский", "price": 7000},
+    {"category": "Супы", "dish": "Рассольник", "price": 5000},
+    {"category": "Супы", "dish": "Гороховый", "price": 5000},
+    {"category": "Супы", "dish": "Куриный бульон с лапшой", "price": 5000},
+    {"category": "Выпечка", "dish": "Пирожки с яйцом и зеленью (4 шт)", "price": 4000},
+    {"category": "Выпечка", "dish": "Пирожки с картошкой (4 шт)", "price": 3000},
+    {"category": "Выпечка", "dish": "Пирожки с капустой (4 шт)", "price": 3000},
+    {"category": "Выпечка", "dish": "Пирожки с яблоками (4 шт)", "price": 3500},
+    {"category": "Выпечка", "dish": "Булочки дрожжевые (4 шт)", "price": 3000},
+    {"category": "Выпечка", "dish": "Ватрушки с кремом (4 шт)", "price": 3000},
+    {"category": "Выпечка", "dish": "Орешки со сгущенкой (4 шт)", "price": 3000},
+    {"category": "Десерты", "dish": "Торт шоколадный (1 кг)", "price": 10000},
+    {"category": "Десерты", "dish": "Торт чизкейк (1 кг)", "price": 7000},
+    {"category": "Десерты", "dish": "Эклеры (300 гр)", "price": 3000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Пельмени свиные (1 кг)", "price": 15000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Пельмени куриные (1 кг)", "price": 12000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Пельмени говяжьи (1 кг)", "price": 13000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Вареники с творогом (1 кг)", "price": 10000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Вареники с картофелем и луком (1 кг)", "price": 10000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Котлеты куриные", "price": 5000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Котлеты говяжьи", "price": 5000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Котлеты рыбные", "price": 5000},
+    {"category": "Замороженные полуфабрикаты", "dish": "Наггетсы куриные (1 кг)", "price": 5000},
+    {"category": "Дополнения", "dish": "Сметана (50 гр)", "price": 800},
+    {"category": "Дополнения", "dish": "Вареная сгущенка (50 гр)", "price": 800},
+    {"category": "Дополнения", "dish": "Мёд (50 гр)", "price": 1100},
+    {"category": "Дополнения", "dish": "Варенье (50 гр апельсин/персик/клубника)", "price": 500},
+    {"category": "Дополнения", "dish": "Майонез (50 гр)", "price": 800},
+    {"category": "Дополнения", "dish": "Кетчуп (50 гр)", "price": 800},
+    {"category": "Дополнения", "dish": "Сливки (50 мл)", "price": 1100},
+    {"category": "Дополнения", "dish": "Пампушки (10 шт)", "price": 1000}];
 
         function groupByCategory(menu) {
             return menu.reduce((acc, item) => {
@@ -106,13 +189,83 @@
                     dishElement.className = 'dish';
                     dishElement.innerHTML = `
                         <span class="dish-name">${dish.dish}</span>
-                        <span class="dish-price">${dish.price} тг</span>
+                        <span class="dish-price">${dish.price.toLocaleString('ru-RU')} тг</span>
+                        <div class="dish-controls">
+                            <button class="decrease-quantity" data-dish="${dish.dish}">-</button>
+                            <input type="number" class="quantity-input" value="0" min="0" data-dish="${dish.dish}">
+                            <button class="increase-quantity" data-dish="${dish.dish}">+</button>
+                        </div>
                     `;
                     categoryElement.appendChild(dishElement);
                 });
 
                 menuContainer.appendChild(categoryElement);
             }
+
+            // Добавляем обработчики событий для кнопок и инпутов
+            document.querySelectorAll('.decrease-quantity').forEach(button => {
+                button.addEventListener('click', function() {
+                    updateQuantity(this.getAttribute('data-dish'), -1);
+                });
+            });
+
+            document.querySelectorAll('.increase-quantity').forEach(button => {
+                button.addEventListener('click', function() {
+                    updateQuantity(this.getAttribute('data-dish'), 1);
+                });
+            });
+
+            document.querySelectorAll('.quantity-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    updateCart(this.getAttribute('data-dish'), parseInt(this.value));
+                });
+            });
+        }
+
+        function updateQuantity(dish, change) {
+            const input = document.querySelector(`.quantity-input[data-dish="${dish}"]`);
+            let newValue = parseInt(input.value) + change;
+            newValue = Math.max(0, newValue); // Не позволяем отрицательные значения
+            input.value = newValue;
+            updateCart(dish, newValue);
+        }
+
+        function updateCart(dish, quantity) {
+            if (quantity > 0) {
+                cart[dish] = quantity;
+            } else {
+                delete cart[dish];
+            }
+            updateCartButton();
+        }
+
+        function updateCartButton() {
+            const cartButton = document.getElementById('cart');
+            const totalItems = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
+            cartButton.textContent = `Корзина (${totalItems})`;
+        }
+
+        function showCart() {
+            const cartItems = document.getElementById('cart-items');
+            const cartTotal = document.getElementById('cart-total');
+            cartItems.innerHTML = '';
+            let total = 0;
+
+            for (const [dish, quantity] of Object.entries(cart)) {
+                const dishData = menuData.find(item => item.dish === dish);
+                const itemTotal = dishData.price * quantity;
+                total += itemTotal;
+
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                cartItem.innerHTML = `
+                    <span>${dish}</span>
+                    <span>${quantity} x ${dishData.price.toLocaleString('ru-RU')} тг = ${itemTotal.toLocaleString('ru-RU')} тг</span>
+                `;
+                cartItems.appendChild(cartItem);
+            }
+
+            cartTotal.textContent = `Итого: ${total.toLocaleString('ru-RU')} тг`;
         }
 
         function initializeApp() {
