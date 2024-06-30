@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Menu</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        h1, h2 {
+            color: var(--tg-theme-accent-text-color, #3390ec);
+        }
+        .category {
+            margin-bottom: 20px;
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .dish {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--tg-theme-hint-color, #cccccc);
+        }
+        .dish-name {
+            flex-grow: 1;
+        }
+        .dish-price {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        #error-message {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Наше меню</h1>
+    <div id="error-message"></div>
+    <div id="menu"></div>
+
+    <script>
+        const menuData = [
+            {category: "Завтраки", dish: "Сырники (5 шт)", price: 7000},
+            {category: "Завтраки", dish: "Блины (23 см диаметр 2 шт)", price: 5000},
+            {category: "Завтраки", dish: "Блинчики (5 шт)", price: 5000},
+            {category: "Завтраки", dish: "Оладьи на кефире (5 шт)", price: 5000},
+            {category: "Закуски", dish: "Картофельные драники (5 шт)", price: 3000},
+            {category: "Закуски", dish: "Кабачковые оладьи (5 шт)", price: 6000},
+            {category: "Закуски", dish: "Оладьи из печени (5 шт)", price: 6000},
+            {category: "Гарниры", dish: "Картофельное пюре", price: 1500},
+            {category: "Гарниры", dish: "Рис", price: 1200},
+            {category: "Гарниры", dish: "Макароны", price: 1000},
+            {category: "Гарниры", dish: "Лапша", price: 1500},
+            {category: "Салаты", dish: "Оливье (1 кг)", price: 10000},
+            {category: "Салаты", dish: "Винегрет (1 кг)", price: 7000},
+            {category: "Салаты", dish: "Мимоза", price: 9000},
+            {category: "Горячие блюда", dish: "Голубцы", price: 7000},
+            {category: "Горячие блюда", dish: "Пельмени свиные", price: 8000},
+            {category: "Горячие блюда", dish: "Пельмени говяжьи", price: 8000},
+            {category: "Горячие блюда", dish: "Пельмени куриные", price: 8000},
+            {category: "Горячие блюда", dish: "Фаршированный перец (1 шт)", price: 1500},
+            {category: "Горячие блюда", dish: "Вареники творожные", price: 1500},
+            {category: "Горячие блюда", dish: "Вареники картофельные", price: 1500},
+            {category: "Горячие блюда", dish: "Рагу из утки", price: 1500},
+            {category: "Горячие блюда", dish: "Лагман", price: 8000},
+            {category: "Горячие блюда", dish: "Плов с курицей", price: 8000},
+            {category: "Горячие блюда", dish: "Плов с говядиной", price: 8000},
+            {category: "Мясные блюда", dish: "Картошка по-французски", price: 3000},
+            {category: "Мясные блюда", dish: "Куриная грудка под шубой из овощей и сыра", price: 6000},
+            {category: "Мясные блюда", dish: "Манты классические (4 шт)", price: 6000},
+            {category: "Мясные блюда", dish: "Манты с тыквой (4 шт)", price: 4000},
+            {category: "Мясные блюда", dish: "Куриные котлеты (2 шт)", price: 3000},
+            {category: "Мясные блюда", dish: "Мясные котлеты (2 шт)", price: 4000},
+            {category: "Мясные блюда", dish: "Рыбные котлеты (2 шт)", price: 3000},
+            {category: "Супы", dish: "Борщ украинский", price: 7000},
+            {category: "Супы", dish: "Рассольник", price: 5000}
+        ];
+
+        function groupByCategory(menu) {
+            return menu.reduce((acc, item) => {
+                (acc[item.category] = acc[item.category] || []).push(item);
+                return acc;
+            }, {});
+        }
+
+        function renderMenu() {
+            const menuContainer = document.getElementById('menu');
+            const groupedMenu = groupByCategory(menuData);
+
+            for (const [category, dishes] of Object.entries(groupedMenu)) {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'category';
+                categoryElement.innerHTML = `<h2>${category}</h2>`;
+
+                dishes.forEach(dish => {
+                    const dishElement = document.createElement('div');
+                    dishElement.className = 'dish';
+                    dishElement.innerHTML = `
+                        <span class="dish-name">${dish.dish}</span>
+                        <span class="dish-price">${dish.price} тг</span>
+                    `;
+                    categoryElement.appendChild(dishElement);
+                });
+
+                menuContainer.appendChild(categoryElement);
+            }
+        }
+
+        function initializeApp() {
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    const tg = window.Telegram.WebApp;
+                    tg.expand();
+                    renderMenu();
+                    tg.ready();
+                } else {
+                    throw new Error("Telegram WebApp is not available");
+                }
+            } catch (error) {
+                console.error("Error initializing app:", error);
+                document.getElementById('error-message').textContent = 
+                    "Ошибка при инициализации приложения. Пожалуйста, убедитесь, что вы открываете это в Telegram.";
+                renderMenu(); // Отображаем меню даже в случае ошибки
+            }
+        }
+
+        // Ждем, пока DOM будет полностью загружен
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
