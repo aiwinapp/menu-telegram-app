@@ -238,7 +238,7 @@
     <div id="error"></div>
 
     <script>
-        // Объявляем переменные глобально
+        // Об��являем переменные глобально
         let cart = {};
         let menuData = [];
         let tg;
@@ -481,7 +481,7 @@
                     showStatus("Заказ отправлен в чат");
                 } catch (error) {
                     console.error("Ошибка при отправке заказа:", error);
-                    showStatus("Ошибка при отправке заказа. Попробуйте ещ�� раз.");
+                    showStatus("Ошибка при отправке заказа. Попробуйте еще раз.");
                     Sentry.captureException(error);
                 }
             } else {
@@ -595,95 +595,89 @@
             }
 
             // Подключаем TON Connect SDK
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js';
-            document.head.appendChild(script);
+            const connector = new TonConnect();
 
-            script.onload = () => {
-                const connector = new TonConnect();
+            let walletAddress = null;
 
-                let walletAddress = null;
-
-                async function initTonConnect() {
-                    try {
-                        await connector.restoreConnection();
-                        
-                        if (connector.connected) {
-                            const walletInfo = await connector.getWalletInfo();
-                            walletAddress = walletInfo.address;
-                            updateUI();
-                        }
-                    } catch (error) {
-                        console.error('Error initializing TON Connect:', error);
-                        showError('Не удалось инициализировать TON Connect. Пожалуйста, попробуйте позже.');
-                    }
-                }
-
-                async function connectWallet() {
-                    try {
-                        const universalLink = connector.connect({
-                            universalUrl: 'https://app.tonkeeper.com/ton-connect',
-                            bridgeUrl: 'https://bridge.tonapi.io/bridge'
-                        });
-
-                        window.Telegram.WebApp.openLink(universalLink);
-
-                        const walletInfo = await connector.onStatusChange((wallet) => {
-                            if (wallet) {
-                                walletAddress = wallet.account.address;
-                                updateUI();
-                                return true; // Stop listening
-                            }
-                        });
-                    } catch (error) {
-                        console.error('Error connecting to wallet:', error);
-                        showError('Не удалось подключить кошелек. Пожалуйста, проверьте соединение и попробуйте снова.');
-                    }
-                }
-
-                async function disconnectWallet() {
-                    try {
-                        await connector.disconnect();
-                        walletAddress = null;
+            async function initTonConnect() {
+                try {
+                    await connector.restoreConnection();
+                    
+                    if (connector.connected) {
+                        const walletInfo = await connector.getWalletInfo();
+                        walletAddress = walletInfo.address;
                         updateUI();
-                    } catch (error) {
-                        console.error('Error disconnecting wallet:', error);
-                        showError('Не удалось отключить кошелек. Пожалуйста, попробуйте позже.');
                     }
+                } catch (error) {
+                    console.error('Error initializing TON Connect:', error);
+                    showError('Не удалось инициализировать TON Connect. Пожалуйста, попробуйте позже.');
                 }
+            }
 
-                function updateUI() {
-                    const connectButton = document.getElementById('connectButton');
-                    const walletInfo = document.getElementById('walletInfo');
+            async function connectWallet() {
+                try {
+                    const universalLink = connector.connect({
+                        universalUrl: 'https://app.tonkeeper.com/ton-connect',
+                        bridgeUrl: 'https://bridge.tonapi.io/bridge'
+                    });
 
-                    if (walletAddress) {
-                        connectButton.style.display = 'none';
-                        walletInfo.innerHTML = `
-                            <p>Подключенный кошелек: ${walletAddress}</p>
-                            <button id="disconnectButton">Отключить кошелек</button>
-                        `;
-                        document.getElementById('disconnectButton').addEventListener('click', disconnectWallet);
-                    } else {
-                        connectButton.style.display = 'block';
-                        walletInfo.innerHTML = '';
-                    }
+                    window.Telegram.WebApp.openLink(universalLink);
+
+                    const walletInfo = await connector.onStatusChange((wallet) => {
+                        if (wallet) {
+                            walletAddress = wallet.account.address;
+                            updateUI();
+                            return true; // Stop listening
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error connecting to wallet:', error);
+                    showError('Не удалось подключить кошелек. Пожалуйста, проверьте соединение и попробуйте снова.');
                 }
+            }
 
-                function showError(message) {
-                    const errorElement = document.getElementById('error');
-                    errorElement.textContent = message;
-                    errorElement.style.display = 'block';
-                    setTimeout(() => {
-                        errorElement.style.display = 'none';
-                    }, 5000); // Скрываем сообщение через 5 секунд
+            async function disconnectWallet() {
+                try {
+                    await connector.disconnect();
+                    walletAddress = null;
+                    updateUI();
+                } catch (error) {
+                    console.error('Error disconnecting wallet:', error);
+                    showError('Не удалось отключить кошелек. Пожалуйста, попробуйте позже.');
                 }
+            }
 
-                // Initialize
-                initTonConnect();
+            function updateUI() {
+                const connectButton = document.getElementById('connectButton');
+                const walletInfo = document.getElementById('walletInfo');
 
-                // Add event listener to connect button
-                document.getElementById('connectButton').addEventListener('click', connectWallet);
-            };
+                if (walletAddress) {
+                    connectButton.style.display = 'none';
+                    walletInfo.innerHTML = `
+                        <p>Подключенный кошелек: ${walletAddress}</p>
+                        <button id="disconnectButton">Отключить кошелек</button>
+                    `;
+                    document.getElementById('disconnectButton').addEventListener('click', disconnectWallet);
+                } else {
+                    connectButton.style.display = 'block';
+                    walletInfo.innerHTML = '';
+                }
+            }
+
+            function showError(message) {
+                const errorElement = document.getElementById('error');
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                setTimeout(() => {
+                    errorElement.style.display = 'none';
+                }, 5000); // Скрываем сообщение через 5 секунд
+            }
+
+            // Initialize
+            initTonConnect();
+
+            // Add event listener to connect button
+            document.getElementById('connectButton').addEventListener('click', connectWallet);
         }
 
         // Вызываем initializeApp после загрузки DOM
@@ -695,4 +689,5 @@
     ></script>
 </body>
 </html>
+
 
