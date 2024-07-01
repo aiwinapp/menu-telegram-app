@@ -238,7 +238,7 @@
     <div id="error"></div>
 
     <script>
-        // Об��являем переменные глобально
+        //  переменные глобльно
         let cart = {};
         let menuData = [];
         let tg;
@@ -275,7 +275,7 @@
                         data: menuData,
                         timestamp: Date.now()
                     }));
-                    console.log('Меню загружено и кэшировано:', menuData);
+                    console.log('Меню загружено и кэшировно:', menuData);
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки меню:', error);
@@ -512,22 +512,41 @@
                 if (hash.startsWith('#tgWebAppData=')) {
                     const encodedData = hash.substring('#tgWebAppData='.length);
                     const decodedData = decodeURIComponent(encodedData);
-                    const userData = JSON.parse(decodeURIComponent(decodedData.split('=')[1]));
-                    console.log('Parsed Telegram WebApp Data:', userData);
+                    const params = new URLSearchParams(decodedData);
+                    const userDataString = params.get('user');
+                    const userData = JSON.parse(decodeURIComponent(userDataString));
 
-                    // Отправляем данные в Sentry
-                    Sentry.captureMessage('Parsed Telegram WebApp Data', {
-                        level: 'info',
-                        extra: userData
-                    });
+                    // Валидация структуры данных
+                    if (validateUserData(userData)) {
+                        console.log('Parsed Telegram WebApp Data:', userData);
 
-                    return userData;
+                        // Отправляем данные в Sentry
+                        Sentry.captureMessage('Parsed Telegram WebApp Data', {
+                            level: 'info',
+                            extra: userData
+                        });
+
+                        return userData;
+                    } else {
+                        throw new Error('Invalid user data structure');
+                    }
                 }
             } catch (error) {
                 console.error('Ошибка при парсинге данных Telegram WebApp:', error);
-                Sentry.captureException(error);
+                Sentry.captureException(error, {
+                    extra: {
+                        hash: window.location.hash,
+                        decodedData: decodedData || null,
+                        userDataString: userDataString || null
+                    }
+                });
             }
             return null;
+        }
+
+        function validateUserData(data) {
+            // Проверяем наличие обязательных полей
+            return data && typeof data.id === 'number' && typeof data.first_name === 'string' && typeof data.last_name === 'string' && typeof data.username === 'string';
         }
 
         // Пример использования функции
