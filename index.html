@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Домашняя кухня МАР-ДЕЛЬ-ПЛАТА</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
@@ -151,9 +152,9 @@
 
     /* Добавляем стили для анимации обновления */
     @keyframes update-flash {
-        0% { background-color: var(--tg-theme-button-color, #3390ec); }
-        50% { background-color: var(--tg-theme-secondary-bg-color, #f0f0f0); }
-        100% { background-color: var(--tg-theme-button-color, #3390ec); }
+        0% { background-color: var(--tg-theme-button-color, #e2af52); }
+        50% { background-color: var(--tg-theme-secondary-bg-color, #a06e12); }
+        100% { background-color: var(--tg-theme-button-color, #674609); }
     }
     .update-animation {
         animation: update-flash 0.3s ease-in-out;
@@ -180,6 +181,10 @@
     <!-- Добавляем элемент для отображения статусных сообщений -->
     <div id="status-message"></div>
 
+    <div id="walletInfo"></div>
+    <button id="connectButton">Connect Wallet</button>
+    <div id="error" style="display: none; color: red;"></div>
+
     <script>
         // Объявляем переменные глобально
         let cart = {};
@@ -190,7 +195,7 @@
         const MENU_CACHE_KEY = 'cachedMenu';
         const MENU_CACHE_EXPIRATION = 60 * 60 * 1000; // 1 час в миллисекундах
 
-        // Добавляем глобальные переме��ные для отслеживания количества и суммы
+        // Добавляем глобальные переменые для отслеживания количества и суммы
         let cartItemCount = 0;
         let cartTotalSum = 0;
 
@@ -536,6 +541,94 @@
                 showStatus("Ошибка: Кнопка 'Отправить заказ в чат' не найдена");
                 Sentry.captureMessage("Кнопка 'Отправить заказ в чат' не надена", { level: 'error' });
             }
+
+            // Подключаем TON Connect SDK
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js';
+            document.head.appendChild(script);
+
+            script.onload = () => {
+                const connector = new TonConnect();
+
+                let walletAddress = null;
+
+                async function initTonConnect() {
+                    try {
+                        await connector.restoreConnection();
+                        
+                        if (connector.connected) {
+                            const walletInfo = await connector.getWalletInfo();
+                            walletAddress = walletInfo.address;
+                            updateUI();
+                        }
+                    } catch (error) {
+                        console.error('Error initializing TON Connect:', error);
+                        showError('Failed to initialize TON Connect');
+                    }
+                }
+
+                async function connectWallet() {
+                    try {
+                        const universalLink = connector.connect({
+                            universalUrl: 'https://app.tonkeeper.com/ton-connect',
+                            bridgeUrl: 'https://bridge.tonapi.io/bridge'
+                        });
+
+                        window.Telegram.WebApp.openLink(universalLink);
+
+                        const walletInfo = await connector.onStatusChange((wallet) => {
+                            if (wallet) {
+                                walletAddress = wallet.account.address;
+                                updateUI();
+                                return true; // Stop listening
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error connecting to wallet:', error);
+                        showError('Failed to connect to wallet');
+                    }
+                }
+
+                async function disconnectWallet() {
+                    try {
+                        await connector.disconnect();
+                        walletAddress = null;
+                        updateUI();
+                    } catch (error) {
+                        console.error('Error disconnecting wallet:', error);
+                        showError('Failed to disconnect wallet');
+                    }
+                }
+
+                function updateUI() {
+                    const connectButton = document.getElementById('connectButton');
+                    const walletInfo = document.getElementById('walletInfo');
+
+                    if (walletAddress) {
+                        connectButton.style.display = 'none';
+                        walletInfo.innerHTML = `
+                            <p>Connected Wallet: ${walletAddress}</p>
+                            <button id="disconnectButton">Disconnect Wallet</button>
+                        `;
+                        document.getElementById('disconnectButton').addEventListener('click', disconnectWallet);
+                    } else {
+                        connectButton.style.display = 'block';
+                        walletInfo.innerHTML = '';
+                    }
+                }
+
+                function showError(message) {
+                    const errorElement = document.getElementById('error');
+                    errorElement.textContent = message;
+                    errorElement.style.display = 'block';
+                }
+
+                // Initialize
+                initTonConnect();
+
+                // Add event listener to connect button
+                document.getElementById('connectButton').addEventListener('click', connectWallet);
+            };
         }
 
         // Вызываем initializeApp после загрузки DOM
