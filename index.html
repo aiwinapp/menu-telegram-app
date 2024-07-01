@@ -175,6 +175,7 @@
         border-radius: 5px;
         cursor: pointer;
         margin-top: 10px;
+        transition: background-color 0.3s ease; /* Добавлена анимация */
     }
     #connectButton:hover, #disconnectButton:hover {
         background-color: var(--tg-theme-button-hover-color, #856b3a);
@@ -185,11 +186,36 @@
         background-color: #ffcccc;
         border: 1px solid #ff0000;
         border-radius: 5px;
+        display: none; /* Скрываем по умолчанию */
+    }
+
+    /* Новый стиль для хедера */
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: var(--tg-theme-bg-color, #ffffff);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    /* Адаптивность для хедера */
+    @media (max-width: 600px) {
+        header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        #connectButton {
+            margin-top: 10px;
+            width: 100%;
+        }
     }
     </style>
 </head>
 <body>
-    <h1></h1>
+    <header>
+        <h1>Домашняя кухня МАР-ДЕЛЬ-ПЛАТА</h1>
+        <button id="connectButton">Подключить кошелек</button>
+    </header>
     <div id="error-message"></div>
     <div id="menu"></div>
 
@@ -209,8 +235,7 @@
     <div id="status-message"></div>
 
     <div id="walletInfo"></div>
-    <button id="connectButton">Подключить кошелек</button>
-    <div id="error" style="display: none;"></div>
+    <div id="error"></div>
 
     <script>
         // Объявляем переменные глобально
@@ -403,7 +428,7 @@
             updateInlineOrderButton(); // Обновляем информацию при отображении корзины
         }
 
-        // Дбавляем обработчик для закрытия модального окна корзины
+        // Дбавляем обработчик для закрыти модального окна корзины
         document.getElementById('close-cart').addEventListener('click', function() {
             document.getElementById('cart-modal').style.display = 'none';
         });
@@ -456,7 +481,7 @@
                     showStatus("Заказ отправлен в чат");
                 } catch (error) {
                     console.error("Ошибка при отправке заказа:", error);
-                    showStatus("Ошибка при отправке заказа. Попробуйте еще раз.");
+                    showStatus("Ошибка при отправке заказа. Попробуйте ещ�� раз.");
                     Sentry.captureException(error);
                 }
             } else {
@@ -590,7 +615,7 @@
                         }
                     } catch (error) {
                         console.error('Error initializing TON Connect:', error);
-                        showError('Не удалось инициализировать TON Connect');
+                        showError('Не удалось инициализировать TON Connect. Пожалуйста, попробуйте позже.');
                     }
                 }
 
@@ -612,7 +637,7 @@
                         });
                     } catch (error) {
                         console.error('Error connecting to wallet:', error);
-                        showError('Не удалось подключить кошелек');
+                        showError('Не удалось подключить кошелек. Пожалуйста, проверьте соединение и попробуйте снова.');
                     }
                 }
 
@@ -623,7 +648,7 @@
                         updateUI();
                     } catch (error) {
                         console.error('Error disconnecting wallet:', error);
-                        showError('Не удалось отключить кошелек');
+                        showError('Не удалось отключить кошелек. Пожалуйста, попробуйте позже.');
                     }
                 }
 
@@ -648,6 +673,9 @@
                     const errorElement = document.getElementById('error');
                     errorElement.textContent = message;
                     errorElement.style.display = 'block';
+                    setTimeout(() => {
+                        errorElement.style.display = 'none';
+                    }, 5000); // Скрываем сообщение через 5 секунд
                 }
 
                 // Initialize
