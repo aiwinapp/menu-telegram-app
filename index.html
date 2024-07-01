@@ -159,6 +159,33 @@
     .update-animation {
         animation: update-flash 0.3s ease-in-out;
     }
+
+    #walletInfo {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    #connectButton, #disconnectButton {
+        background-color: var(--tg-theme-button-color, #674609);
+        color: var(--tg-theme-button-text-color, #ffffff);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+    #connectButton:hover, #disconnectButton:hover {
+        background-color: var(--tg-theme-button-hover-color, #856b3a);
+    }
+    #error {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #ffcccc;
+        border: 1px solid #ff0000;
+        border-radius: 5px;
+    }
     </style>
 </head>
 <body>
@@ -182,8 +209,8 @@
     <div id="status-message"></div>
 
     <div id="walletInfo"></div>
-    <button id="connectButton">Connect Wallet</button>
-    <div id="error" style="display: none; color: red;"></div>
+    <button id="connectButton">Подключить кошелек</button>
+    <div id="error" style="display: none;"></div>
 
     <script>
         // Объявляем переменные глобально
@@ -563,7 +590,7 @@
                         }
                     } catch (error) {
                         console.error('Error initializing TON Connect:', error);
-                        showError('Failed to initialize TON Connect');
+                        showError('Не удалось инициализировать TON Connect');
                     }
                 }
 
@@ -585,7 +612,7 @@
                         });
                     } catch (error) {
                         console.error('Error connecting to wallet:', error);
-                        showError('Failed to connect to wallet');
+                        showError('Не удалось подключить кошелек');
                     }
                 }
 
@@ -596,7 +623,7 @@
                         updateUI();
                     } catch (error) {
                         console.error('Error disconnecting wallet:', error);
-                        showError('Failed to disconnect wallet');
+                        showError('Не удалось отключить кошелек');
                     }
                 }
 
@@ -607,8 +634,8 @@
                     if (walletAddress) {
                         connectButton.style.display = 'none';
                         walletInfo.innerHTML = `
-                            <p>Connected Wallet: ${walletAddress}</p>
-                            <button id="disconnectButton">Disconnect Wallet</button>
+                            <p>Подключенный кошелек: ${walletAddress}</p>
+                            <button id="disconnectButton">Отключить кошелек</button>
                         `;
                         document.getElementById('disconnectButton').addEventListener('click', disconnectWallet);
                     } else {
